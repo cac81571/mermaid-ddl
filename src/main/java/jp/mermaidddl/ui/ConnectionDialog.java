@@ -76,7 +76,7 @@ public class ConnectionDialog extends JDialog {
         add(createButtons(), BorderLayout.SOUTH);
 
         reloadList(0);
-        setSize(820, 420);
+        setSize(820, 460);
         setLocationRelativeTo(owner);
     }
 
@@ -161,9 +161,23 @@ public class ConnectionDialog extends JDialog {
     }
 
     private JPanel createButtons() {
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        p.add(button("保存して閉じる", e -> saveAndClose()));
-        p.add(button("キャンセル", e -> cancel()));
+        String path = store.getFile().toAbsolutePath().normalize().toString();
+        JTextField pathField = new JTextField(path);
+        pathField.setEditable(false);
+        pathField.setCaretPosition(0);
+        pathField.setToolTipText("接続先の保存ファイル（選択してコピーできます）");
+
+        JPanel pathRow = new JPanel(new BorderLayout(6, 0));
+        pathRow.add(new JLabel("保存ファイル"), BorderLayout.WEST);
+        pathRow.add(pathField, BorderLayout.CENTER);
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        actions.add(button("保存して閉じる", e -> saveAndClose()));
+        actions.add(button("キャンセル", e -> cancel()));
+
+        JPanel p = new JPanel(new BorderLayout(0, 8));
+        p.add(pathRow, BorderLayout.CENTER);
+        p.add(actions, BorderLayout.SOUTH);
         return p;
     }
 

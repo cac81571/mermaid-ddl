@@ -96,4 +96,7 @@ public class ConnectionStore {
 
     public String getLastSelected() { return lastSelected; }
     public void setLastSelected(String name) { lastSelected = name == null ? "" : name; }
+
+    /** 接続先を保存している JSON ファイルのパス。 */
+    public Path getFile() { return file; }
 }
