@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ER 図プレビュー</title>
+<style>
+  html, body { margin: 0; background: #fff; font-family: "Yu Gothic UI", "Meiryo", "Noto Sans CJK JP", sans-serif; }
+  #err { color: #b00020; white-space: pre-wrap; padding: 8px 12px; font-size: 13px; }
+  #err:empty { display: none; }
+  #out { padding: 12px; }
+  #empty { color: #888; padding: 16px; font-size: 13px; }
+</style>
+<script src="mermaid.min.js"></script>
+</head>
+<body>
+<div id="err"></div>
+<div id="out"><div id="empty">「ER図→DDL」「DDL→ER図」を実行するか、プレビュー更新を押すと ER 図を表示します。</div></div>
+<script>
+  // 状態: init → ready → rendering → ok / error（Java 側から参照する）
+  window.renderState = 'init';
+  window.renderMessage = '';
+  var seq = 0;
+  var scale = 1.0;
+  // 拡大・縮小は SVG の表示サイズで行う（WebView のズームだと再描画時に文字幅の計測がずれるため）
+  function applyScale() {
+    var s = document.querySelector('#out svg');
+    if (!s || !s.viewBox || !s.viewBox.baseVal) return;
+    var vb = s.viewBox.baseVal;
+    s.style.maxWidth = 'none';
+    s.setAttribute('width', vb.width * scale);
+    s.setAttribute('height', vb.height * scale);
+    s.style.width = (vb.width * scale) + 'px';
+    s.style.height = (vb.height * scale) + 'px';
+  }
+  function setScale(z) { scale = z; applyScale(); }
+  function notify() {
+    try { if (window.javaBridge) window.javaBridge.onRender(window.renderState, window.renderMessage); } catch (e) { /* 無視 */ }
+  }
+  try {
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: 'default',
+      fontFamily: '"Yu Gothic UI", "Meiryo", "Noto Sans CJK JP", sans-serif',
+      er: { useMaxWidth: false }
+    });
+    window.renderState = 'ready';
+  } catch (e) {
+    window.renderState = 'error';
+    window.renderMessage = 'mermaid.min.js を読み込めません: ' + e;
+  }
+  function renderEr(code) {
+    window.renderState = 'rendering';
+    document.getElementById('err').textContent = '';
+    mermaid.render('er' + (++seq), code).then(function (r) {
+      document.getElementById('out').innerHTML = r.svg;
+      applyScale();
+      window.renderState = 'ok';
+      window.renderMessage = '';
+      notify();
+    }).catch(function (e) {
+      var msg = (e && e.message) ? e.message : String(e);
+      document.getElementById('err').textContent = 'Mermaid の描画エラー:\n' + msg;
+      window.renderState = 'error';
+      window.renderMessage = msg;
+      notify();
+    });
+  }
+  function svgText() {
+    var s = document.querySelector('#out svg');
+    return s ? new XMLSerializer().serializeToString(s) : null;
+  }
+</script>
+</body>
+</html>
